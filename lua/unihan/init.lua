@@ -40,12 +40,27 @@ function M.setup(opts)
       return require("unihan").dict:lsp_completion(params)
     end,
   }
+
   vim.api.nvim_create_autocmd({ "FileType", "BufEnter" }, {
     group = group,
     callback = function()
       require("unihan.LanguageServer").launch("/", request_map)
     end,
   })
+
+  --
+  -- BufReadCmd
+  --
+  vim.api.nvim_create_autocmd("BufReadCmd", {
+    pattern = { "廣韻:*" },
+    ---@param ev vim.api.keyset.create_autocmd.callback_args
+    callback = function(ev)
+      M.dict.on_bufreadcmd(ev.buf, ev.file, opts)
+    end,
+  })
+  vim.api.nvim_create_user_command("UnihanGuangyun", function()
+    vim.cmd "edit 廣韻:"
+  end, {})
 
   --
   -- command

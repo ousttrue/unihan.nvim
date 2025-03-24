@@ -2,6 +2,7 @@ local util = require "unihan.util"
 local kana_util = require "unihan.kana_util"
 local pinyin = require "unihan.pinyin"
 local GuangYun = require "unihan.GuangYun"
+local Sbgy = require "unihan.Sbgy"
 local NUM_BASE = tonumber("2460", 16) - 1
 local utf8 = require "utf8"
 local zhuyin_map = require("unihan.zhuyin").map
@@ -46,32 +47,21 @@ local CompletionItem = require "unihan.CompletionItem"
 ---@field indices string? 康煕字典
 ---@field ref string[]? 異字体
 
--- # SKK https://github.com/skk-dev/dict
---   unihan.UnihanDict:load_skk
--- # Unicode Han Database
---   https://www.unicode.org/reports/tr38/
---   https://github.com/unicode-org/unihan-database
--- # 學生字典
---   unihan.UnihanDict:load_xszd
--- # 康煕字典
---   unihan.UnihanDict:load_kangxi
--- # 支那漢
---   unihan.UnihanDict:load_chinadat
--- # 廣韻
---   unihan.UnihanDict:load_quangyun
 ---@class unihan.UnihanDict
 ---@field map table<string, UnihanChar> 単漢字辞書
 ---@field jisyo table<string, CompletionItem[]> SKK辞書
 ---@field simple_map table<string, string> 簡体字マップ
 ---@field zhuyin_map table<string, string[]> 注音辞書
 ---@field guangyun GuangYun 廣韻
----@field unihan_like_file string?
----@field unihan_reading_file string?
----@field unihan_variants_file string?
----@field uangyun_file string?
----@field chinadat_file string?
+---@field sbgy unihan.Sbgy 宋本廣韻
+---@field unihan_like_file string? Unihan_DictionaryLikeData.txt
+---@field unihan_reading_file string? Unihan_Readings.txt
+---@field unihan_variants_file string? Unihan_Variants.txt
+---@field kuankhiunn_file string? Kuankhiunn0704-semicolon.txt
 ---@field kyu_file string?
----@field xszd_file string?
+---@field sbgy_file string? sbgy.xml 宋本廣韻
+---@field xszd_file string? xszd.txt 學生字典
+---@field chinadat_file string? chinadat.csv 支那漢
 ---@field skk_L string?
 local UnihanDict = {}
 UnihanDict.__index = UnihanDict
@@ -84,6 +74,7 @@ function UnihanDict.new()
     simple_map = {},
     zhuyin_map = {},
     guangyun = GuangYun.new(),
+    sbgy = Sbgy.new(),
   }, UnihanDict)
   return self
 end
@@ -668,12 +659,20 @@ function UnihanDict:add_ref(ch, ref)
   table.insert(list, ref)
 end
 
----廣韻
+-- 有女同車《〈廣韻〉全字表》原表
 ---@param data string Kuankhiunn0704-semicolon.txt
 ---@param path string?
-function UnihanDict:load_quangyun(data, path)
-  self.guangyun_file = path
-  self.guangyun:load(data)
+function UnihanDict:load_kuankhiunn(data, path)
+  self.kuankhiunn_file = path
+  self.guangyun:load_kuankhiunn(data)
+end
+
+-- 校正宋本廣韻
+---@param data string sbgy.xml
+---@param path string?
+function UnihanDict:load_sbgy(data, path)
+  self.sbgy_file = path
+  self.sbgy:load_sbgy(data)
 end
 
 ---@param ch string
@@ -1143,6 +1142,31 @@ function UnihanDict:lsp_completion(params)
       return nil, items
     end
   end
+end
+
+---@param buf integer
+---@param url string
+---@param opts neomarkdown.Params
+function UnihanDict.on_bufreadcmd(buf, url, opts)
+  ---@type string[]
+  local lines = {
+    "廣韻",
+  }
+
+  vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
+
+  vim.api.nvim_buf_set_lines(buf, -2, -1, true, lines)
+  -- vim.api.nvim_buf_set_lines(buf, -2, -1, true, vim.split(body, "\n"))
+  vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
+
+  vim.keymap.set("n", "j", "gj", { buffer = buf, noremap = true })
+  vim.keymap.set("n", "k", "gk", { buffer = buf, noremap = true })
+
+  vim.api.nvim_set_current_buf(buf)
+  -- vim.cmd "norm! zM"
+  -- local ufo = require "ufo"
+  -- ufo.applyFolds(0, { 1, -1 })
+  -- ufo.closeFoldsWith(1)
 end
 
 return UnihanDict

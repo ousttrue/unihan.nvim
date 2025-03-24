@@ -4,7 +4,8 @@
 ---@field xszd string? path to xszd.txt from https://github.com/cjkvi/cjkvi-dict
 ---@field kangxi string? kx2ucs.txt from https://github.com/cjkvi/cjkvi-dict
 ---@field chinadat string? path to chinadat.csv from https://www.seiwatei.net/info/dnchina.htm
----@field guangyun string? path to Kuankhiunn0704-semicolon.txt from https://github.com/syimyuzya/guangyun0704
+---@field kuankhiunn string? 有女同車《〈廣韻〉全字表》原表 path to Kuankhiunn0704-semicolon.txt from https://github.com/syimyuzya/guangyun0704
+---@field sbgy string? 宋本廣韻
 ---@field user string? path to user_dict.json
 ---@field dir string? basedir
 
@@ -16,7 +17,6 @@ local function parse_unihan(encoded)
   local UnihanDict = require "unihan.UnihanDict"
   local dict = UnihanDict.new()
   local util = require "unihan.util"
-  local utf8 = require "utf8"
 
   local unihan_dir = opts.unihan_dir or opts.dir
   local unihan_like_file = unihan_dir .. "/Unihan_DictionaryLikeData.txt"
@@ -42,10 +42,17 @@ local function parse_unihan(encoded)
     dict:load_unihan_othermappings(data)
   end
 
-  if opts.guangyun then
-    data = util.readfile_sync(vim.uv, opts.guangyun)
+  if opts.sbgy then
+    data = util.readfile_sync(vim.uv, opts.sbgy)
     if data then
-      dict:load_quangyun(data, opts.guangyun)
+      dict:load_sbgy(data, opts.sbgy)
+    end
+  end
+
+  if opts.kuankhiunn then
+    data = util.readfile_sync(vim.uv, opts.kuankhiunn)
+    if data then
+      dict:load_kuankhiunn(data, opts.kuankhiunn)
     end
   end
 
@@ -82,23 +89,26 @@ local function parse_unihan(encoded)
   end
 
   ---@type string[]
-  local jisyo = {}
-  if type(opts.jisyo) == "string" then
-    table.insert(jisyo, opts.jisyo)
-  elseif type(opts.jisyo) == "table" then
-    for _, j in ipairs(opts.jisyo) do
-      table.insert(jisyo, j)
+  do
+    local list = {}
+    local jisyo = opts.jisyo
+    if type(jisyo) == "string" then
+      table.insert(list, jisyo)
+    elseif type(jisyo) == "table" then
+      for _, j in ipairs(jisyo) do
+        table.insert(list, j)
+      end
     end
-  end
-  if #jisyo == 0 then
-    table.insert(jisyo, opts.dir .. "/SKK-JISYO.L")
-    table.insert(jisyo, opts.dir .. "/SKK-JISYO.china_taiwan")
-  end
+    if #list == 0 then
+      table.insert(list, opts.dir .. "/SKK-JISYO.L")
+      table.insert(list, opts.dir .. "/SKK-JISYO.china_taiwan")
+    end
 
-  for _, path in ipairs(jisyo) do
-    data = util.readfile_sync(vim.uv, path)
-    if data then
-      dict:load_skk(data, path)
+    for _, path in ipairs(list) do
+      data = util.readfile_sync(vim.uv, path)
+      if data then
+        dict:load_skk(data, path)
+      end
     end
   end
 

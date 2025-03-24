@@ -9,21 +9,25 @@ M.check = function()
   if dict then
     vim.health.ok "Setup is correct"
 
-    local function check_dict_file(key)
+    ---@param key string
+    ---@param label string?
+    local function check_dict_file(key, label)
+      label = label and ("[" .. label .. "] ") or ""
       if dict[key] then
-        vim.health.ok(dict[key])
+        vim.health.ok(("%s%s"):format(label, dict[key] or key))
       else
-        vim.health.error(key)
+        vim.health.error(("%s%s"):format(label, key))
       end
     end
     check_dict_file "unihan_like_file"
     check_dict_file "unihan_reading_file"
     check_dict_file "unihan_variants_file"
-    check_dict_file "guangyun_file"
-    check_dict_file "chinadat_file"
+    check_dict_file("kuankhiunn_file", "有女同車《〈廣韻〉全字表》原表")
+    check_dict_file("sbgy_file", "宋本廣韻")
+    check_dict_file("chinadat_file", "支那漢")
     check_dict_file "kyu_file"
-    check_dict_file "xszd_file"
-    check_dict_file "skk_L"
+    check_dict_file("xszd_file", "學生字典")
+    check_dict_file("skk_L", "SKK辞書")
 
     local n = 0
     for k, v in pairs(dict.map) do

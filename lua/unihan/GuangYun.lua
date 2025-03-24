@@ -174,7 +174,7 @@ function GuangYun.resetmetatable(self)
 end
 
 ---@param data string Kuankhiunn0704-semicolon.txt
-function GuangYun:load(data)
+function GuangYun:load_kuankhiunn(data)
   for line in string.gmatch(data, "([^\n]+)\n") do
     local xiaoyun = XiaoYun.parse(line)
     if xiaoyun then

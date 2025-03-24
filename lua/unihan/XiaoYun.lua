@@ -1,5 +1,5 @@
-local util = require "neoskk.util"
-local utf8 = require "neoskk.utf8"
+local util = require "unihan.util"
+local utf8 = require "utf8"
 
 ---小韻
 ---@class XiaoYun
