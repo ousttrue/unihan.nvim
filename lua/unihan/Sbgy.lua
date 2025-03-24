@@ -209,49 +209,111 @@ function Sbgy:load_sbgy_rhyme(volume, i, data)
   yun:parse_body(data)
 end
 
----@param url string
----@return string[]
-function Sbgy:render_lines(url)
-  local root, child = url:match "^sbgy:/([^/]+)/([^/]+)"
-  if root and child then
-    local list = self[root]
-    for _, yun in ipairs(list) do
-      if yun.name == child then
-        return yun:render_lines()
+---@param path string
+---@return '平'|'上'|'去'|'入'|nil
+---@return string? 韻目
+---@return string? 小韻
+local function parse_path(path)
+  local root
+  local yun_name
+  local xiao_name
+
+  local pattern = "^/([^/]*)(.*)$"
+  local m, remain = path:match(pattern)
+  if m then
+    root = m
+    m, remain = remain:match(pattern)
+    if m then
+      yun_name = m
+      m, remain = remain:match(pattern)
+      if m then
+        xiao_name = m
       end
     end
-
-    return {
-      ("/%s/%s: not found"):format(root, child),
-    }
-  else
-    ---@type string[]
-    local lines = {}
-
-    local space = "                 "
-
-    for i = 1, 60 do
-      local yun = self["平"][i]
-      lines[i] = ("|%02d|"):format(i) .. (yun and yun:md_link() or space)
-    end
-    for i = 1, 60 do
-      local yun = self["上"][i]
-      lines[i] = lines[i] .. "|" .. (yun and yun:md_link() or space)
-    end
-    for i = 1, 60 do
-      local yun = self["去"][i]
-      lines[i] = lines[i] .. "|" .. (yun and yun:md_link() or space)
-    end
-    for i = 1, 60 do
-      local yun = self["入"][i]
-      lines[i] = lines[i] .. "|" .. (yun and yun:md_link() or space) .. "|"
-    end
-
-    table.insert(lines, 1, "|  |[平聲](sbgy:/平) |[上聲](sbgy:/上) |[去聲](sbgy:/去) |[入聲](sbgy:/入) |")
-    table.insert(lines, 2, "|--|-----------------|-----------------|-----------------|-----------------|")
-
-    return lines
   end
+
+  return root, yun_name, xiao_name
+end
+
+---@erturn Sbgy|unihan.Yun|unihan.Xiaoyun|nil
+function Sbgy:resolve_url(url)
+  if not url:find "^sbgy:" then
+    return
+  end
+
+  local root, yun_name, xiao_name = parse_path(url:sub(6))
+  if not root then
+    return self
+  end
+
+  -- 四声
+  local list = self[root]
+  if not list then
+    return
+  end
+  if not yun_name then
+    return self
+  end
+
+  ---@type unihan.Yun?
+  local yun
+  for _, y in ipairs(list) do
+    if y.name == yun_name then
+      -- 韻目
+      yun = y
+      break
+    end
+  end
+  if not yun then
+    return nil
+  end
+  if not xiao_name then
+    return yun
+  end
+
+  ---@type unihan.Xiaoyun?
+  local xiaoyun
+  for _, x in ipairs(yun.xiaoyun) do
+    if x.chars[1] == xiao_name then
+      xiaoyun = x
+      break
+    end
+  end
+  if xiaoyun then
+    return nil
+  end
+
+  return xiaoyun
+end
+
+---@return string[]
+function Sbgy:render_lines(u)
+  ---@type string[]
+  local lines = {}
+
+  local space = "                 "
+
+  for i = 1, 60 do
+    local yun = self["平"][i]
+    lines[i] = ("|%02d|"):format(i) .. (yun and yun:md_link() or space)
+  end
+  for i = 1, 60 do
+    local yun = self["上"][i]
+    lines[i] = lines[i] .. "|" .. (yun and yun:md_link() or space)
+  end
+  for i = 1, 60 do
+    local yun = self["去"][i]
+    lines[i] = lines[i] .. "|" .. (yun and yun:md_link() or space)
+  end
+  for i = 1, 60 do
+    local yun = self["入"][i]
+    lines[i] = lines[i] .. "|" .. (yun and yun:md_link() or space) .. "|"
+  end
+
+  table.insert(lines, 1, "|  |[平聲](sbgy:/平) |[上聲](sbgy:/上) |[去聲](sbgy:/去) |[入聲](sbgy:/入) |")
+  table.insert(lines, 2, "|--|-----------------|-----------------|-----------------|-----------------|")
+
+  return lines
 end
 
 return Sbgy

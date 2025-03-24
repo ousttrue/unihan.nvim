@@ -55,7 +55,16 @@ function M.setup(opts)
     pattern = { "sbgy:*" },
     ---@param ev vim.api.keyset.create_autocmd.callback_args
     callback = function(ev)
-      local lines = M.dict.sbgy:render_lines(ev.file)
+      local o = M.dict.sbgy:resolve_url(ev.file)
+
+      local lines
+      if o then
+        lines = o:render_lines()
+      else
+        lines = {
+          ("%s not found"):format(ev.file),
+        }
+      end
 
       vim.api.nvim_set_option_value("modifiable", true, { buf = ev.buf })
 
