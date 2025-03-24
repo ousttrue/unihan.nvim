@@ -1144,29 +1144,4 @@ function UnihanDict:lsp_completion(params)
   end
 end
 
----@param buf integer
----@param url string
----@param opts neomarkdown.Params
-function UnihanDict.on_bufreadcmd(buf, url, opts)
-  ---@type string[]
-  local lines = {
-    "廣韻",
-  }
-
-  vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
-
-  vim.api.nvim_buf_set_lines(buf, -2, -1, true, lines)
-  -- vim.api.nvim_buf_set_lines(buf, -2, -1, true, vim.split(body, "\n"))
-  vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
-
-  vim.keymap.set("n", "j", "gj", { buffer = buf, noremap = true })
-  vim.keymap.set("n", "k", "gk", { buffer = buf, noremap = true })
-
-  vim.api.nvim_set_current_buf(buf)
-  -- vim.cmd "norm! zM"
-  -- local ufo = require "ufo"
-  -- ufo.applyFolds(0, { 1, -1 })
-  -- ufo.closeFoldsWith(1)
-end
-
 return UnihanDict

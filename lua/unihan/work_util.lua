@@ -137,6 +137,8 @@ function M.async_load(opts, on_completed)
     assert(encoded, vim.inspect(opts))
     ---@diagnostic disable
     local dict = require("string.buffer").decode(encoded)
+    local Sbgy = require "unihan.Sbgy"
+    Sbgy.setmetatable(dict.sbgy) 
     ---@cast dict unihan.UnihanDict
     on_completed(dict)
     -- print(vim.inspect(dict))

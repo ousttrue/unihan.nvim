@@ -52,14 +52,32 @@ function M.setup(opts)
   -- BufReadCmd
   --
   vim.api.nvim_create_autocmd("BufReadCmd", {
-    pattern = { "廣韻:*" },
+    pattern = { "sbgy:*" },
     ---@param ev vim.api.keyset.create_autocmd.callback_args
     callback = function(ev)
-      M.dict.on_bufreadcmd(ev.buf, ev.file, opts)
+      local lines = M.dict.sbgy:render_lines(ev.file)
+
+      vim.api.nvim_set_option_value("modifiable", true, { buf = ev.buf })
+
+      vim.api.nvim_buf_set_lines(ev.buf, -2, -1, true, lines)
+      -- vim.api.nvim_buf_set_lines(buf, -2, -1, true, vim.split(body, "\n"))
+      vim.api.nvim_set_option_value("modifiable", false, { buf = ev.buf })
+
+      vim.keymap.set("n", "j", "gj", { buffer = ev.buf, noremap = true })
+      vim.keymap.set("n", "k", "gk", { buffer = ev.buf, noremap = true })
+
+      vim.api.nvim_set_current_buf(ev.buf)
+      -- vim.cmd "norm! zM"
+      -- local ufo = require "ufo"
+      -- ufo.applyFolds(0, { 1, -1 })
+      -- ufo.closeFoldsWith(1)
+      vim.api.nvim_set_option_value("filetype", "markdown", {
+        buf = ev.buf,
+      })
     end,
   })
   vim.api.nvim_create_user_command("UnihanGuangyun", function()
-    vim.cmd "edit 廣韻:"
+    vim.cmd "edit sbgy:"
   end, {})
 
   --
