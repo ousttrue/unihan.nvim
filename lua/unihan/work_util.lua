@@ -141,7 +141,6 @@ function M.async_load(opts, on_completed)
     Sbgy.setmetatable(dict.sbgy) 
     ---@cast dict unihan.UnihanDict
     on_completed(dict)
-    -- print(vim.inspect(dict))
   end)()
 end
 

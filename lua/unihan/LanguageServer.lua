@@ -167,9 +167,10 @@ end
 
 ---@param method vim.lsp.protocol.Method|string LSP method name.
 ---@param params table? LSP request params.
+---@param is_notify boolean
 ---@return lsp.ResponseError? err
 ---@return any? result
-function LanguageServer:_handle(method, params)
+function LanguageServer:_handle(method, params, is_notify)
   self.message_id = self.message_id + 1
   if method == vim.lsp.protocol.Methods.initialize then
     return nil, { capabilities = LanguageServer.capabilities }
@@ -197,9 +198,8 @@ end
 function LanguageServer:request(method, params, callback, notify_callback)
   self.logger:trace("received LSP request for method " .. method)
 
-  local err, res = self:_handle(method, params)
-  -- vim.schedule_wrap(callback)(err, res)
-  callback(err, res)
+  local err, res = self:_handle(method, params, false)
+  vim.schedule_wrap(callback)(err, res)
 
   if notify_callback then
     -- copy before scheduling to make sure it hasn't changed
@@ -216,7 +216,7 @@ end
 ---@param params table? LSP request params.
 function LanguageServer:notify(method, params)
   self.logger:trace("received LSP notification for method " .. method)
-  self:_handle(method, params)
+  self:_handle(method, params, true)
 end
 
 return LanguageServer
