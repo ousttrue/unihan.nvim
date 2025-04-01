@@ -21,6 +21,9 @@ local function volume_to_name(volume)
   end
 end
 
+--
+-- 小韻
+--
 ---@class unihan.Xiaoyun
 ---@field fanqie string
 ---@field ipa string
@@ -40,6 +43,18 @@ function Xiaoyun.new(ipa, onyomi)
   return self
 end
 
+function Xiaoyun:render_lines()
+  local lines = {}
+  table.insert(lines, self.chars[1])
+  table.insert(lines, self.fanqie)
+  table.insert(lines, self.ipa)
+  table.insert(lines, self.onyomi)
+  return lines
+end
+
+--
+-- 韻目
+--
 ---@class unihan.Yun
 ---@field name string
 ---@field parent string
@@ -91,7 +106,7 @@ function Yun:render_lines()
   local lines = {}
 
   for _, xiao in ipairs(self.xiaoyun) do
-    table.insert(lines, ("%s: %s"):format(xiao.chars[1], xiao.fanqie))
+    table.insert(lines, ("[%s](sbgy:/x/%s): %s"):format(xiao.chars[1], xiao.chars[1], xiao.fanqie))
   end
 
   return lines
@@ -242,7 +257,7 @@ function Sbgy:load_sbgy_rhyme(volume, i, data)
 end
 
 ---@param path string
----@return '平'|'上'|'去'|'入'|nil
+---@return '平'|'上'|'去'|'入'|'x'|nil
 ---@return string? 韻目
 ---@return string? 小韻
 local function parse_path(path)
@@ -273,9 +288,23 @@ function Sbgy:resolve_url(url)
     return
   end
 
+  -- sbgy:/平/東
   local root, yun_name, xiao_name = parse_path(url:sub(6))
   if not root then
     return self
+  end
+
+  if root == "x" then
+    -- 小韻
+    for _, s in ipairs { "平", "上", "去", "入" } do
+      for _, y in ipairs(self[s]) do
+        for _, z in ipairs(y.xiaoyun) do
+          if z.chars[1] == yun_name then
+            return z
+          end
+        end
+      end
+    end
   end
 
   -- 四声
