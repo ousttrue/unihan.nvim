@@ -173,6 +173,32 @@ function Sbgy:load_sbgy(data)
     ---@cast volume unihan.SbgyVolume
     self:load_sbgy_v(volume, v)
   end
+
+  -- patch
+  -- local function check(key)
+  --   for i, y in ipairs(self[key]) do
+  --     if #y.xiaoyun > 0 and y.name ~= y.xiaoyun[1].chars[1] then
+  --       print(key, i, y.name, "!=", y.xiaoyun[1].chars[1])
+  --     end
+  --   end
+  -- end
+  -- check "平"
+  -- check "上"
+  -- check "去"
+  -- check "入"
+  -- 平 21 欽 != 欣
+  -- 平 23 魂 != 䰟
+  -- 平 27 删 != 𠜂
+  -- 平 46  != 尤
+  self["平"][46].name = "尤"
+  -- 上 26 產 != 産
+  -- 上 47 寢 != 寑
+  -- 去 5 ？ != 寘
+  -- 去 50 候 != 𠋫
+  -- 入 11 𣳚 != 沒
+  -- 入 12 ？ != 曷
+  -- 入 29 ？ != 葉
+  -- 入 30 帖 != 怗
 end
 
 ---@param volume unihan.SbgyVolume
@@ -196,7 +222,7 @@ end
 ---@param i integer
 ---@param data string
 function Sbgy:load_sbgy_entry(volume, i, data)
-  local name = volume_to_name(volume)
+  local name, _ = volume_to_name(volume)
   table.insert(self[name], Yun.parse_entry(data, name))
 end
 
@@ -204,7 +230,10 @@ end
 ---@param i integer
 ---@param data string
 function Sbgy:load_sbgy_rhyme(volume, i, data)
-  local name = volume_to_name(volume)
+  local name, sub = volume_to_name(volume)
+  if sub == "下" then
+    i = i + 28
+  end
   local yun = self[name][i]
   yun:parse_body(data)
 end
@@ -312,6 +341,12 @@ function Sbgy:render_lines(u)
 
   table.insert(lines, 1, "|  |[平聲](sbgy:/平) |[上聲](sbgy:/上) |[去聲](sbgy:/去) |[入聲](sbgy:/入) |")
   table.insert(lines, 2, "|--|-----------------|-----------------|-----------------|-----------------|")
+
+  local unihan = require "unihan"
+  if unihan.dict then
+    table.insert(lines, 1, ("[宋本廣韻](%s)"):format(unihan.dict.sbgy_file))
+    table.insert(lines, 2, "")
+  end
 
   return lines
 end

@@ -1,12 +1,14 @@
 local Sbgy = require "unihan.Sbgy"
 local util = require "unihan.util"
 local uv = require "luv"
+local utf8 = require "utf8"
 
 describe("宋本廣韻", function()
   local sbgy = Sbgy.new()
 
   setup(function()
-    local path = os.getenv "GHQ_ROOT" .. "/github.com/cjkvi/cjkvi-dict/sbgy.xml"
+    -- local path = os.getenv "GHQ_ROOT" .. "/github.com/cjkvi/cjkvi-dict/sbgy.xml"
+    local path = os.getenv "LOCALAPPDATA" .. "/Temp/nvim/unihan/cjkvi-dict-master/sbgy.xml"
     local data = util.readfile_sync(uv, path)
     assert(data)
     sbgy:load_sbgy(data)
@@ -34,8 +36,8 @@ describe("宋本廣韻", function()
 
     it("東第一", function()
       local yun = hei[1]
-      assert.are_equal("東第一", yun.name)
-      assert.are_equal(57, #yun.xiaoyun)
+      assert.are_equal("東", yun.name)
+      assert.are_equal(34, #yun.xiaoyun)
       local x = yun.xiaoyun[1]
       assert.are_equal("德紅切", x.fanqie)
       assert.are_equal("トウ", x.onyomi)
@@ -46,26 +48,31 @@ describe("宋本廣韻", function()
       assert.are_equal("䰤", x.chars[17])
     end)
 
+    it("尤", function()
+      local yun = hei[46]
+      assert.are_equal("尤", yun.name)
+    end)
+
     it("凡第二十九", function()
-      assert.are_equal("凡第二十九", hei[#hei].name)
+      assert.are_equal("凡", hei[#hei].name)
     end)
   end)
 
   it("上", function()
     local hei = sbgy["上"]
-    assert.are_equal("董第一", hei[1].name)
-    assert.are_equal("范第五十五", hei[#hei].name)
+    assert.are_equal("董", hei[1].name)
+    assert.are_equal("范", hei[#hei].name)
   end)
 
   it("去", function()
     local hei = sbgy["去"]
-    assert.are_equal("送第一", hei[1].name)
-    assert.are_equal("梵第六十", hei[#hei].name)
+    assert.are_equal("送", hei[1].name)
+    assert.are_equal("梵", hei[#hei].name)
   end)
 
   it("入", function()
     local hei = sbgy["入"]
-    assert.are_equal("屋第一", hei[1].name)
-    assert.are_equal("乏第三十四", hei[#hei].name)
+    assert.are_equal("屋", hei[1].name)
+    assert.are_equal("乏", hei[#hei].name)
   end)
 end)
