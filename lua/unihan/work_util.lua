@@ -1,14 +1,3 @@
----@class unihan.Opts
----@field jisyo string|table|nil path to SKK-JISYO.L from https://github.com/skk-dict/jisyo
----@field unihan_dir string? path to dir. Extracted https://www.unicode.org/Public/UCD/latest/ucd/Unihan.zip
----@field xszd string? path to xszd.txt from https://github.com/cjkvi/cjkvi-dict
----@field kangxi string? kx2ucs.txt from https://github.com/cjkvi/cjkvi-dict
----@field chinadat string? path to chinadat.csv from https://www.seiwatei.net/info/dnchina.htm
----@field kuankhiunn string? 有女同車《〈廣韻〉全字表》原表 path to Kuankhiunn0704-semicolon.txt from https://github.com/syimyuzya/guangyun0704
----@field sbgy string? 宋本廣韻
----@field user string? path to user_dict.json
----@field dir string? basedir
-
 ---@param encoded string
 ---@return string string.buffer encoded
 local function parse_unihan(encoded)
@@ -18,6 +7,9 @@ local function parse_unihan(encoded)
   local dict = UnihanDict.new()
   local util = require "unihan.util"
 
+  --
+  -- unicode
+  --
   local unihan_dir = opts.unihan_dir or opts.dir
   local unihan_like_file = unihan_dir .. "/Unihan_DictionaryLikeData.txt"
   local data = util.readfile_sync(vim.uv, unihan_like_file)
@@ -42,17 +34,13 @@ local function parse_unihan(encoded)
     dict:load_unihan_othermappings(data)
   end
 
+  --
+  --
+  --
   if opts.sbgy then
     data = util.readfile_sync(vim.uv, opts.sbgy)
     if data then
       dict:load_sbgy(data, opts.sbgy)
-    end
-  end
-
-  if opts.kuankhiunn then
-    data = util.readfile_sync(vim.uv, opts.kuankhiunn)
-    if data then
-      dict:load_kuankhiunn(data, opts.kuankhiunn)
     end
   end
 
@@ -71,49 +59,43 @@ local function parse_unihan(encoded)
     end
   end
 
-  do
-    local kyu_file =
-        vim.fs.joinpath(opts.dir, "hanzi-chars-main/data-charlist/日本《常用漢字表》（2010年）旧字体.txt")
+  --
+  -- other
+  --
+
+  if opts.kuankhiunn then
+    data = util.readfile_sync(vim.uv, opts.kuankhiunn)
+    if data then
+      dict:load_kuankhiunn(data, opts.kuankhiunn)
+    end
+  end
+
+  local kyu_file = opts.kyu_file
+  if kyu_file then
     data = util.readfile_sync(vim.uv, kyu_file)
     if data then
       dict:load_kyu(data, kyu_file)
     end
   end
 
-  do
-    local chinadat_file = opts.chinadat and opts.chinadat or (vim.fs.joinpath(opts.dir, "chinadat.csv"))
+  local chinadat_file = opts.chinadat
+  if chinadat_file then
     data = util.readfile_sync(vim.uv, chinadat_file)
     if data then
       dict:load_chinadat(data, chinadat_file)
     end
   end
 
-  ---@type string[]
-  do
-    local list = {}
-    local jisyo = opts.jisyo
-    if type(jisyo) == "string" then
-      table.insert(list, jisyo)
-    elseif type(jisyo) == "table" then
-      for _, j in ipairs(jisyo) do
-        table.insert(list, j)
-      end
-    end
-    if #list == 0 then
-      table.insert(list, opts.dir .. "/SKK-JISYO.L")
-      table.insert(list, opts.dir .. "/SKK-JISYO.china_taiwan")
-    end
-
-    for _, path in ipairs(list) do
-      data = util.readfile_sync(vim.uv, path)
-      if data then
-        dict:load_skk(data, path)
-      end
+  for _, path in ipairs(opts.skk_jisyo) do
+    data = util.readfile_sync(vim.uv, path)
+    if data then
+      dict:load_skk(data, path)
     end
   end
 
-  if opts.user then
-    data = util.readfile_sync(vim.uv, opts.user)
+  local user_dict = opts.user_dict
+  if user_dict then
+    data = util.readfile_sync(vim.uv, user_dict)
     if data then
       local json = vim.json.decode(data)
       dict:load_user(json)
@@ -138,7 +120,7 @@ function M.async_load(opts, on_completed)
     ---@diagnostic disable
     local dict = require("string.buffer").decode(encoded)
     local Sbgy = require "unihan.Sbgy"
-    Sbgy.setmetatable(dict.sbgy) 
+    Sbgy.setmetatable(dict.sbgy)
     ---@cast dict unihan.UnihanDict
     on_completed(dict)
   end)()
