@@ -168,6 +168,9 @@ end
 
 ---@param data string
 function Sbgy:load_sbgy(data)
+  -- remove newline
+  data = data:gsub("%s+", " ")
+
   for title, v in data:gmatch "<volume[^>]+>%s*<volume_title>(.-)</volume_title>(.-)</volume>" do
     local volume = title
     ---@cast volume unihan.SbgyVolume
