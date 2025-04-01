@@ -44,8 +44,8 @@ function CompletionItem.copy(src)
 end
 
 ---@param w string word
----@param item UniHanChar? 単漢字情報
----@param dict UniHanDict
+---@param item unihan.UniHanChar? 単漢字情報
+---@param dict unihan.UniHanDict
 ---@return CompletionItem
 function CompletionItem.from_word(w, item, dict)
   local menu = " "

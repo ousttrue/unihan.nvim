@@ -145,7 +145,11 @@ function Yun:parse_body(data)
   end
 end
 
----@class unihan.Sbgy 宋本廣韻
+---
+--- 宋本廣韻
+---
+---@class unihan.Sbgy
+---@field sbgy_file string? sgby.xml
 ---@field 平 unihan.Yun[]
 ---@field 上 unihan.Yun[]
 ---@field 去 unihan.Yun[]
@@ -181,8 +185,23 @@ function Sbgy.new()
   return self
 end
 
+-- <book title="校正宋本廣韻">
+--   <preface></preface>
+--   <preface></preface>
+--   <old_preface></old_preface>
+--   <volume></volume> 上平
+--   <volume></volume> 下平
+--   <volume></volume> 上
+--   <volume></volume> 去
+--   <volume></volume> 入
+--   <appendix></appendix>
+--   <postscript></postscript>
+-- </book>
+--
 ---@param data string
-function Sbgy:load_sbgy(data)
+---@param sbgy_file string?
+function Sbgy:load_sbgy(data, sbgy_file)
+  self.sbgy_file = sbgy_file
   -- remove newline
   data = data:gsub("%s+", " ")
 
@@ -219,6 +238,26 @@ function Sbgy:load_sbgy(data)
   -- 入 30 帖 != 怗
 end
 
+-- <volume id="v1">
+--   <volume_title>廣韻上平聲卷第一</volume_title>
+--   <catalog>
+--     <rhythmic_entry><fanqie>德紅</fanqie>東第一<note>獨用</note></rhythmic_entry>
+--   </catalog>
+--   <rhyme id="sp01">
+--     <rhyme_num>一</rhyme_num>
+--     <voice_part ipa="tuŋ˥˩" onyomi="トウ">
+--       <word_head id="w107b0601">東</word_head>
+--     </voice_part>
+--     <voice_part ipa="dʰuŋ˩" onyomi="トウ">
+--     </voice_part>
+--     ...
+--   </rhyme>
+--   <rhyme id="sp02"></rhyme>
+--   <rhyme id="sp03"></rhyme>
+--   ...
+--   <end_volume>廣韻上平聲卷第一</end_volume>
+--   <accession></accession>
+-- </volume>
 ---@param volume unihan.SbgyVolume
 ---@param data string
 function Sbgy:load_sbgy_v(volume, data)
@@ -374,9 +413,9 @@ function Sbgy:render_lines(u)
   table.insert(lines, 1, "|  |[平聲](sbgy:/平) |[上聲](sbgy:/上) |[去聲](sbgy:/去) |[入聲](sbgy:/入) |")
   table.insert(lines, 2, "|--|-----------------|-----------------|-----------------|-----------------|")
 
-  local unihan = require "unihan"
-  if unihan.dict then
-    table.insert(lines, 1, ("[宋本廣韻](%s)"):format(unihan.dict.sbgy_file))
+  local sbgy_file = self.sbgy_file
+  if sbgy_file then
+    table.insert(lines, 1, ("[宋本廣韻](%s)"):format(sbgy_file))
     table.insert(lines, 2, "")
   end
 

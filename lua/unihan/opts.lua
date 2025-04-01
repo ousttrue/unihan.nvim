@@ -26,7 +26,7 @@ end
 ---@field chinadat string? path to chinadat.csv from https://www.seiwatei.net/info/dnchina.htm
 ---@field kuankhiunn string? 有女同車《〈廣韻〉全字表》原表 path to Kuankhiunn0704-semicolon.txt from https://github.com/syimyuzya/guangyun0704
 ---@field user_dict string? path to user_dict.json
----@field kyu_file string? 旧字体.txt
+---@field kyu string? 旧字体.txt
 ---@field dir string? basedir
 
 local M = {}
@@ -45,8 +45,8 @@ function M.make_opts(opts)
   opts.xszd = opts.xszd or vim.fs.joinpath(opts.dir, "cjkvi-dict-master/xszd.txt")
   opts.kangxi = opts.kangxi or vim.fs.joinpath(opts.dir, "cjkvi-dict-master/kx2ucs.txt")
   opts.sbgy = opts.sbgy or vim.fs.joinpath(opts.dir, "cjkvi-dict-master/sbgy.xml")
-  opts.kyu_file = opts.kyu_file
-      or vim.fs.joinpath(opts.dir, "hanzi-chars-main/data-charlist/日本《常用漢字表》（2010年）旧字体.txt")
+  opts.kyu = opts.kyu
+    or vim.fs.joinpath(opts.dir, "hanzi-chars-main/data-charlist/日本《常用漢字表》（2010年）旧字体.txt")
   opts.chinadat = opts.chinadat or vim.fs.joinpath(opts.dir, "chinadat.csv")
 
   ---@type string[]

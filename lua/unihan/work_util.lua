@@ -25,47 +25,16 @@ local function parse_unihan(encoded)
   load_opts "sbgy"
   load_opts "kangxi"
   load_opts "xszd"
+  load_opts "kuankhiunn"
+  load_opts "kyu"
+  load_opts "chinadat"
+  load_opts "user_dict"
 
-  --
-  -- other
-  --
-
-  if opts.kuankhiunn then
-    data = util.readfile_sync(vim.uv, opts.kuankhiunn)
-    if data then
-      dict:load_kuankhiunn(data, opts.kuankhiunn)
-    end
-  end
-
-  local kyu_file = opts.kyu_file
-  if kyu_file then
-    data = util.readfile_sync(vim.uv, kyu_file)
-    if data then
-      dict:load_kyu(data, kyu_file)
-    end
-  end
-
-  local chinadat_file = opts.chinadat
-  if chinadat_file then
-    data = util.readfile_sync(vim.uv, chinadat_file)
-    if data then
-      dict:load_chinadat(data, chinadat_file)
-    end
-  end
-
+  -- skk
   for _, path in ipairs(opts.skk_jisyo) do
-    data = util.readfile_sync(vim.uv, path)
+    local data = util.readfile_sync(vim.uv, path)
     if data then
       dict:load_skk(data, path)
-    end
-  end
-
-  local user_dict = opts.user_dict
-  if user_dict then
-    data = util.readfile_sync(vim.uv, user_dict)
-    if data then
-      local json = vim.json.decode(data)
-      dict:load_user(json)
     end
   end
 

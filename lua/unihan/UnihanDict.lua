@@ -145,7 +145,7 @@ end
 
 ---User辞書
 ---@param json table<string, UserDictItem>
-function UnihanDict:load_user(json)
+function UnihanDict:load_user_dict(json)
   for word, v in pairs(json) do
     local last_pos = 1
     for i in utf8.codes(word) do
@@ -672,7 +672,7 @@ end
 ---@param path string?
 function UnihanDict:load_sbgy(data, path)
   self.sbgy_file = path
-  self.sbgy:load_sbgy(data)
+  self.sbgy:load_sbgy(data, path)
 end
 
 ---@param ch string
