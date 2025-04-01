@@ -55,7 +55,7 @@ local CompletionItem = require "unihan.CompletionItem"
 ---@field guangyun GuangYun 廣韻
 ---@field sbgy unihan.Sbgy 宋本廣韻
 ---@field unihan_like_file string? Unihan_DictionaryLikeData.txt
----@field unihan_reading_file string? Unihan_Readings.txt
+---@field unihan_readings_file string? Unihan_Readings.txt
 ---@field unihan_variants_file string? Unihan_Variants.txt
 ---@field kuankhiunn_file string? Kuankhiunn0704-semicolon.txt
 ---@field kyu_file string?
@@ -417,7 +417,7 @@ end
 ---@param data string Unihan_Readings.txt
 ---@param path string?
 function UnihanDict:load_unihan_readings(data, path)
-  self.unihan_reading_file = path
+  self.unihan_readings_file = path
   -- U+3401	kFanqie	他紺 他念
   -- U+6570	kJapanese	スウ ス ショ サク ソク ショク シュク かず かぞえる しばしば せめる
   -- U+6570	kJapaneseKun	KAZOERU KAZU SEMERU

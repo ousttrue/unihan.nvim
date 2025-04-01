@@ -20,7 +20,7 @@ M.check = function()
       end
     end
     check_dict_file "unihan_like_file"
-    check_dict_file "unihan_reading_file"
+    check_dict_file "unihan_readings_file"
     check_dict_file "unihan_variants_file"
     check_dict_file("kuankhiunn_file", "有女同車《〈廣韻〉全字表》原表")
     check_dict_file("sbgy_file", "宋本廣韻")

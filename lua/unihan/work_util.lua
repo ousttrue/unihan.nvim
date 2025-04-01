@@ -7,57 +7,24 @@ local function parse_unihan(encoded)
   local dict = UnihanDict.new()
   local util = require "unihan.util"
 
-  --
-  -- unicode
-  --
-  local unihan_dir = opts.unihan_dir or opts.dir
-  local unihan_like_file = unihan_dir .. "/Unihan_DictionaryLikeData.txt"
-  local data = util.readfile_sync(vim.uv, unihan_like_file)
-  if data then
-    dict:load_unihan_likedata(data, unihan_like_file)
-  end
-
-  local unihan_reading_file = unihan_dir .. "/Unihan_Readings.txt"
-  data = util.readfile_sync(vim.uv, unihan_reading_file)
-  if data then
-    dict:load_unihan_readings(data, unihan_reading_file)
-  end
-
-  local unihan_variants_file = unihan_dir .. "/Unihan_Variants.txt"
-  data = util.readfile_sync(vim.uv, unihan_variants_file)
-  if data then
-    dict:load_unihan_variants(data, unihan_variants_file)
-  end
-
-  data = util.readfile_sync(vim.uv, unihan_dir .. "/Unihan_OtherMappings.txt")
-  if data then
-    dict:load_unihan_othermappings(data)
-  end
-
-  --
-  --
-  --
-  if opts.sbgy then
-    data = util.readfile_sync(vim.uv, opts.sbgy)
-    if data then
-      dict:load_sbgy(data, opts.sbgy)
+  ---@param key string
+  local function load_opts(key)
+    local value = opts[key]
+    if value then
+      local data = util.readfile_sync(vim.uv, value)
+      if data then
+        dict["load_" .. key](dict, data, value)
+      end
     end
   end
 
-  if opts.kangxi then
-    data = util.readfile_sync(vim.uv, opts.kangxi)
-    if data then
-      dict:load_kangxi(data)
-    end
-  end
-
-  do
-    local xszd_file = opts.xszd and opts.xszd or (vim.fs.joinpath(opts.dir, "cjkvi-dict-master/xszd.txt"))
-    data = util.readfile_sync(vim.uv, xszd_file)
-    if data then
-      dict:load_xszd(data, xszd_file)
-    end
-  end
+  load_opts "unihan_likedata"
+  load_opts "unihan_readings"
+  load_opts "unihan_variants"
+  load_opts "unihan_othermappings"
+  load_opts "sbgy"
+  load_opts "kangxi"
+  load_opts "xszd"
 
   --
   -- other

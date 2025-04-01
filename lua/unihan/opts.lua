@@ -16,6 +16,10 @@ end
 ---@class unihan.Opts
 ---@field skk_jisyo table path to SKK-JISYO.L from https://github.com/skk-dict/jisyo
 ---@field unihan_dir string? path to dir. Extracted https://www.unicode.org/Public/UCD/latest/ucd/Unihan.zip
+---@field unihan_likedata string?
+---@field unihan_readings string?
+---@field unihan_variants string?
+---@field unihan_othermappings string?
 ---@field xszd string? path to xszd.txt from https://github.com/cjkvi/cjkvi-dict
 ---@field kangxi string? kx2ucs.txt from https://github.com/cjkvi/cjkvi-dict
 ---@field sbgy string? sbgy.xml from https://github.com/cjkvi/cjkvi-dict 宋本廣韻
@@ -34,9 +38,13 @@ function M.make_opts(opts)
   -- opts = vim.tb
   opts.dir = ensure_make_cache_dir()
 
+  opts.unihan_likedata = vim.fs.joinpath(opts.unihan_dir or opts.dir, "Unihan_DictionaryLikeData.txt")
+  opts.unihan_readings = vim.fs.joinpath(opts.unihan_dir or opts.dir, "Unihan_Readings.txt")
+  opts.unihan_variants = vim.fs.joinpath(opts.unihan_dir or opts.dir, "Unihan_Variants.txt")
+  opts.unihan_othermappings = vim.fs.joinpath(opts.unihan_dir or opts.dir, "Unihan_OtherMappings.txt")
   opts.xszd = opts.xszd or vim.fs.joinpath(opts.dir, "cjkvi-dict-master/xszd.txt")
-  opts.kangxi = opts.xszd or vim.fs.joinpath(opts.dir, "cjkvi-dict-master/kx2ucs.txt")
-  opts.sbgy = opts.xszd or vim.fs.joinpath(opts.dir, "cjkvi-dict-master/sbgy.xml")
+  opts.kangxi = opts.kangxi or vim.fs.joinpath(opts.dir, "cjkvi-dict-master/kx2ucs.txt")
+  opts.sbgy = opts.sbgy or vim.fs.joinpath(opts.dir, "cjkvi-dict-master/sbgy.xml")
   opts.kyu_file = opts.kyu_file
       or vim.fs.joinpath(opts.dir, "hanzi-chars-main/data-charlist/日本《常用漢字表》（2010年）旧字体.txt")
   opts.chinadat = opts.chinadat or vim.fs.joinpath(opts.dir, "chinadat.csv")
