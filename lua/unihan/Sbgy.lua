@@ -285,13 +285,13 @@ function Sbgy:load_kuankhiunn(data, kuankhiunn_file)
     if xiaoyun then
       local x = self.xiaoyun_map[xiaoyun.chars[1]]
       if x then
-        -- x.name
+        x["聲紐"] = xiaoyun["聲紐"]
+        x["開合"] = xiaoyun["開合"]
+        x["等"] = xiaoyun["等"]
+        x["聲調"] = xiaoyun["聲調"]
+        x["roma"] = xiaoyun["roma"]
+        x.fanqie = xiaoyun.fanqie
       end
-      -- table.insert(self.list, xiaoyun)
-      -- local sheng = self:get_or_create_shengniu(xiaoyun.shengniu)
-      -- if sheng then
-      --   table.insert(sheng.xiaoyun_list, xiaoyun.chars[1])
-      -- end
     end
   end
 end

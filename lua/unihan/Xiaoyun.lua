@@ -8,11 +8,11 @@ local utf8 = require "utf8"
 ---@field name string
 ---@field parent string
 ---@field roma string
----@field diao string
+---@field 聲調 string
 ---@field chars string[]
----@field shengniu string 聲紐
----@field huo string 開合呼
----@field deng string 等
+---@field 聲紐 string
+---@field 開合 string
+---@field 等 string
 ---@field ipa string
 ---@field onyomi string
 local Xiaoyun = {}
@@ -61,14 +61,6 @@ function Xiaoyun.parse(line)
   end
 
   local no = tonumber(cols[2])
-  if no > 3874 then
-    -- 3870;3874;丑法;𦑣;1;.;5.34乏;6;徹;合;三;凡;入;thryap;thvap;;;;;
-
-    -- https://gijodai.jp/library/file/kiyo2006/SUMIYA.pdf
-    -- 3874で終わり
-    -- 4000番台は追加データ
-    return
-  end
 
   local name = cols[7]:match "^%d+%.%d+(.*)$"
   local shengniu = cols[9]
@@ -83,11 +75,11 @@ function Xiaoyun.parse(line)
     no = no,
     fanqie = fanqie,
     name = name,
-    shengniu = shengniu,
-    huo = cols[10],
-    deng = cols[11],
+    ["聲紐"] = shengniu,
+    ["開合"] = cols[10],
+    ["等"] = cols[11],
     parent = cols[12],
-    diao = cols[13],
+    ["聲調"] = cols[13],
     roma = cols[14],
     chars = {},
   }, Xiaoyun)
@@ -106,9 +98,9 @@ function Xiaoyun:__tostring()
     self.no,
     self.name,
     self.fanqie,
-    self.diao,
-    self.huo,
-    self.deng,
+    self["聲調"],
+    self["開合"],
+    self["等"],
     util.join(self.chars)
   )
 end
@@ -122,9 +114,16 @@ function Xiaoyun:fanqie_hi()
 end
 
 function Xiaoyun:render_lines()
+  -- x["聲紐"] = xiaoyun["聲紐"]
+  -- x["開合"] = xiaoyun["開合"]
+  -- x["等"] = xiaoyun["等"]
+  -- x["聲調"] = xiaoyun["聲調"]
+  -- x["roma"] = xiaoyun["roma"]
   local lines = {}
   table.insert(lines, self.chars[1])
-  table.insert(lines, self.fanqie)
+  table.insert(lines, ("%s%s"):format(self.fanqie, self["聲調"]))
+  table.insert(lines, ("%s"):format(self["聲紐"]))
+  table.insert(lines, ("%s等%s"):format(self["等"], self["開合"]))
   table.insert(lines, self.ipa)
   table.insert(lines, self.onyomi)
   return lines

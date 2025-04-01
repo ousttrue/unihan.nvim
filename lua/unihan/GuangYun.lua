@@ -4,7 +4,7 @@
 -- https://ytenx.org/kyonh/
 local util = require "unihan.util"
 local yun = require "unihan.yun"
-local XiaoYun = require "unihan.XiaoYun"
+local Xiaoyun = require "unihan.Xiaoyun"
 local utf8 = require "utf8"
 
 ---@alias ShengNiuType "重唇音"|"軽唇音"|"舌頭音"|"舌上音"|"牙音"|"歯頭音"|"正歯音莊組"|"正歯音章組"|"喉音"|"半舌音"|"半歯音"
@@ -85,7 +85,7 @@ end
 
 ---廣韻
 ---@class GuangYun
----@field list XiaoYun[] 小韻リスト
+---@field list unihan.Xiaoyun[] 小韻リスト
 ---@field sheng_list ShengNiu[]
 local GuangYun = {}
 GuangYun.__index = GuangYun
@@ -176,10 +176,16 @@ end
 ---@param data string Kuankhiunn0704-semicolon.txt
 function GuangYun:load_kuankhiunn(data)
   for line in string.gmatch(data, "([^\n]+)\n") do
-    local xiaoyun = XiaoYun.parse(line)
-    if xiaoyun then
+    local xiaoyun = Xiaoyun.parse(line)
+
+    if xiaoyun and xiaoyun.no <= 3874 then
+      -- 3870;3874;丑法;𦑣;1;.;5.34乏;6;徹;合;三;凡;入;thryap;thvap;;;;;
+
+      -- https://gijodai.jp/library/file/kiyo2006/SUMIYA.pdf
+      -- 3874で終わり
+      -- 4000番台は追加データ
       table.insert(self.list, xiaoyun)
-      local sheng = self:get_or_create_shengniu(xiaoyun.shengniu)
+      local sheng = self:get_or_create_shengniu(xiaoyun["聲紐"])
       if sheng then
         table.insert(sheng.xiaoyun_list, xiaoyun.chars[1])
       end
@@ -253,7 +259,7 @@ function GuangYun:make_xiaoyun_list(xiaoyun)
   for i, sheng in ipairs(self.sheng_list) do
     local founds = self:find_xiaoyun(function(x)
       return x.name == xiaoyun.name --[[and x.deng == deng]]
-          and sheng:match(x.shengniu)
+        and sheng:match(x.shengniu)
     end)
     if #founds > 0 then
       if #founds == 1 then
@@ -279,8 +285,8 @@ function GuangYun:make_xiaoyun_list(xiaoyun)
   return list
 end
 
----@param xiaoyuns XiaoYun[]
----@return string[]?, XiaoYun?
+---@param xiaoyuns unihan.XiaoYun[]
+---@return string[]?, unihan.XiaoYun?
 function GuangYun:hover(xiaoyuns)
   for _, xiaoyun in ipairs(xiaoyuns) do
     local lines = self:_hover(xiaoyun)

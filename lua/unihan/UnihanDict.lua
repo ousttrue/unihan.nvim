@@ -750,9 +750,9 @@ function UnihanDict:hover(ch)
           xiaoyun.name,
           xiaoyun.chars[1],
           xiaoyun.fanqie,
-          xiaoyun.diao,
-          xiaoyun.huo,
-          xiaoyun.deng,
+          xiaoyun[""],
+          xiaoyun[""],
+          xiaoyun[""],
           xiaoyun.roma
         )
       )
@@ -795,7 +795,7 @@ function UnihanDict:hover(ch)
     else
       if #xiaoyuns > 0 then
         for _, x in ipairs(xiaoyuns) do
-          table.insert(lines, "小韻: " .. x.name .. ", 聲紐:" .. x.shengniu)
+          table.insert(lines, "小韻: " .. x.name .. ", 聲紐:" .. x["聲紐"])
         end
       else
         table.insert(lines, ("xiaoyun for %s not found"):format(ch))
@@ -806,7 +806,9 @@ function UnihanDict:hover(ch)
         if #line > 0 then
           line = line .. ","
         end
-        line = line .. f .. "切"
+        if f then
+          line = line .. f .. "切"
+        end
       end
       table.insert(lines, line)
       table.insert(lines, "")
