@@ -2,7 +2,7 @@ local util = require "unihan.util"
 local utf8 = require "utf8"
 
 ---小韻
----@class XiaoYun
+---@class unihan.Xiaoyun
 ---@field no integer 小韻番号 1-3874 https://gijodai.jp/library/file/kiyo2006/SUMIYA.pdf
 ---@field fanqie string
 ---@field name string
@@ -13,8 +13,21 @@ local utf8 = require "utf8"
 ---@field shengniu string 聲紐
 ---@field huo string 開合呼
 ---@field deng string 等
-local XiaoYun = {}
-XiaoYun.__index = XiaoYun
+---@field ipa string
+---@field onyomi string
+local Xiaoyun = {}
+Xiaoyun.__index = Xiaoyun
+
+---@param ipa string
+---@param onyomi string
+function Xiaoyun.new(ipa, onyomi)
+  local self = setmetatable({
+    ipa = ipa,
+    onyomi = onyomi,
+    chars = {},
+  }, Xiaoyun)
+  return self
+end
 
 -- 字段(fields)由「;」分隔，内容由左至右依次爲
 -- 1、舊版(unicode3.1字符集第一版)小韻總序號。缺錄:丑戾切、no=2381，烏懈切、no=2455，他德切、no=3728，盧合、no=3784四小韻。
@@ -40,8 +53,8 @@ XiaoYun.__index = XiaoYun
 -- 1;1;德紅;東菄鶇䍶𠍀倲𩜍𢘐涷蝀凍鯟𢔅崠埬𧓕䰤;17;.;1.01東;1;端;開;一;東;平;tung;tung;;;;;
 -- 3674;3676;都歷;的適嫡甋靮鏑馰滴肑弔芍蹢䶂玓樀𪄱𦉹𥕐𥐝扚𣂉啇魡㣿𨑩杓;26;.;5.23錫;5;端;開;四;青;入;tek;tek;;;;;
 ---@param line string
----@return XiaoYun?
-function XiaoYun.parse(line)
+---@return unihan.Xiaoyun?
+function Xiaoyun.parse(line)
   local cols = util.splited(line, ";")
   if #cols <= 5 then
     return
@@ -64,7 +77,7 @@ function XiaoYun.parse(line)
     break
   end
 
-  local fanqie = cols[3]:match('[^%?]+')
+  local fanqie = cols[3]:match "[^%?]+"
 
   local xiaoyun = setmetatable({
     no = no,
@@ -77,7 +90,7 @@ function XiaoYun.parse(line)
     diao = cols[13],
     roma = cols[14],
     chars = {},
-  }, XiaoYun)
+  }, Xiaoyun)
   for _, ch in utf8.codes(cols[4]) do
     table.insert(xiaoyun.chars, ch)
   end
@@ -88,7 +101,7 @@ function XiaoYun.parse(line)
   return xiaoyun
 end
 
-function XiaoYun:__tostring()
+function Xiaoyun:__tostring()
   return ("%d 小韻:%s, %s切%s聲, %s呼, %s等 => %s"):format(
     self.no,
     self.name,
@@ -102,10 +115,19 @@ end
 
 ---半切上字
 ---@return string
-function XiaoYun:fanqie_hi()
+function Xiaoyun:fanqie_hi()
   for _, code in utf8.codes(self.fanqie) do
     return code
   end
 end
 
-return XiaoYun
+function Xiaoyun:render_lines()
+  local lines = {}
+  table.insert(lines, self.chars[1])
+  table.insert(lines, self.fanqie)
+  table.insert(lines, self.ipa)
+  table.insert(lines, self.onyomi)
+  return lines
+end
+
+return Xiaoyun

@@ -21,36 +21,7 @@ local function volume_to_name(volume)
   end
 end
 
---
--- 小韻
---
----@class unihan.Xiaoyun
----@field fanqie string
----@field ipa string
----@field onyomi string
----@field chars string[]
-local Xiaoyun = {}
-Xiaoyun.__index = Xiaoyun
-
----@param ipa string
----@param onyomi string
-function Xiaoyun.new(ipa, onyomi)
-  local self = setmetatable({
-    ipa = ipa,
-    onyomi = onyomi,
-    chars = {},
-  }, Xiaoyun)
-  return self
-end
-
-function Xiaoyun:render_lines()
-  local lines = {}
-  table.insert(lines, self.chars[1])
-  table.insert(lines, self.fanqie)
-  table.insert(lines, self.ipa)
-  table.insert(lines, self.onyomi)
-  return lines
-end
+local Xiaoyun = require "unihan.XiaoYun"
 
 --
 -- 韻目
@@ -150,12 +121,27 @@ end
 ---
 ---@class unihan.Sbgy
 ---@field sbgy_file string? sgby.xml
+---@field kuankhiunn_file string?
 ---@field 平 unihan.Yun[]
 ---@field 上 unihan.Yun[]
 ---@field 去 unihan.Yun[]
 ---@field 入 unihan.Yun[]
+---@field xiaoyun_map table<string, unihan.Xiaoyun>
 local Sbgy = {}
 Sbgy.__index = Sbgy
+
+---@return unihan.Sbgy
+function Sbgy.new()
+  local self = setmetatable({
+    ["平"] = {},
+    ["上"] = {},
+    ["去"] = {},
+    ["入"] = {},
+    xiaoyun_map = {},
+  }, Sbgy)
+
+  return self
+end
 
 function Sbgy.setmetatable(self)
   setmetatable(self, Sbgy)
@@ -171,18 +157,6 @@ function Sbgy.setmetatable(self)
   for _, y in ipairs(self["入"]) do
     Yun.setmetatable(y)
   end
-end
-
----@return unihan.Sbgy
-function Sbgy.new()
-  local self = setmetatable({
-    ["平"] = {},
-    ["上"] = {},
-    ["去"] = {},
-    ["入"] = {},
-  }, Sbgy)
-
-  return self
 end
 
 -- <book title="校正宋本廣韻">
@@ -291,8 +265,35 @@ function Sbgy:load_sbgy_rhyme(volume, i, data)
   if sub == "下" then
     i = i + 28
   end
+  ---@type unihan.Yun
   local yun = self[name][i]
   yun:parse_body(data)
+
+  for _, xiao in ipairs(yun.xiaoyun) do
+    local ch = xiao.chars[1]
+    self.xiaoyun_map[ch] = xiao
+  end
+end
+
+---@param data string
+---@param kuankhiunn_file string?
+function Sbgy:load_kuankhiunn(data, kuankhiunn_file)
+  self.kuankhiunn_file = kuankhiunn_file
+
+  for line in string.gmatch(data, "([^\n]+)\n") do
+    local xiaoyun = Xiaoyun.parse(line)
+    if xiaoyun then
+      local x = self.xiaoyun_map[xiaoyun.chars[1]]
+      if x then
+        -- x.name
+      end
+      -- table.insert(self.list, xiaoyun)
+      -- local sheng = self:get_or_create_shengniu(xiaoyun.shengniu)
+      -- if sheng then
+      --   table.insert(sheng.xiaoyun_list, xiaoyun.chars[1])
+      -- end
+    end
+  end
 end
 
 ---@param path string

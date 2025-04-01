@@ -144,8 +144,11 @@ end
 ---@field annotation string?
 
 ---User辞書
----@param json table<string, UserDictItem>
+---@param json string|table<string, UserDictItem>
 function UnihanDict:load_user_dict(json)
+  if type(json) == "string" then
+    json = vim.json.decode(json)
+  end
   for word, v in pairs(json) do
     local last_pos = 1
     for i in utf8.codes(word) do
@@ -337,15 +340,16 @@ end
 ---@param annotation string?
 function UnihanDict:add_word(word, kana, menu, annotation)
   local items = self.jisyo[kana]
-  if not items then
+  if items then
+    for _, item in ipairs(items) do
+      if item.word == word then
+        -- 重複
+        return
+      end
+    end
+  else
     items = {}
     self.jisyo[kana] = items
-  end
-  for _, item in ipairs(items) do
-    if item.word == word then
-      -- 重複
-      return
-    end
   end
 
   local new_item = CompletionItem.from_word(word, nil, self)
@@ -665,6 +669,7 @@ end
 function UnihanDict:load_kuankhiunn(data, path)
   self.kuankhiunn_file = path
   self.guangyun:load_kuankhiunn(data)
+  self.sbgy:load_kuankhiunn(data, path)
 end
 
 -- 校正宋本廣韻
@@ -676,7 +681,7 @@ function UnihanDict:load_sbgy(data, path)
 end
 
 ---@param ch string
----@return XiaoYun[]
+---@return unihan.Xiaoyun[]
 function UnihanDict:get_xiaoyun(ch)
   local list = {}
   local item = self.map[ch]
