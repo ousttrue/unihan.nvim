@@ -25,6 +25,7 @@ function Xiaoyun.new(ipa, onyomi)
     ipa = ipa,
     onyomi = onyomi,
     chars = {},
+    parent = '',
   }, Xiaoyun)
   return self
 end
@@ -78,7 +79,7 @@ function Xiaoyun.parse(line)
     ["聲紐"] = shengniu,
     ["開合"] = cols[10],
     ["等"] = cols[11],
-    parent = cols[12],
+    parent = cols[7],
     ["聲調"] = cols[13],
     roma = cols[14],
     chars = {},
@@ -94,13 +95,14 @@ function Xiaoyun.parse(line)
 end
 
 function Xiaoyun:__tostring()
-  return ("%d 小韻:%s, %s切%s聲, %s呼, %s等 => %s"):format(
-    self.no,
-    self.name,
+  return ("%s切%s聲 %s%s%s%s (%s) %s"):format(
     self.fanqie,
     self["聲調"],
+    self['聲紐'],
+    self.parent,
     self["開合"],
     self["等"],
+    self.roma,
     util.join(self.chars)
   )
 end

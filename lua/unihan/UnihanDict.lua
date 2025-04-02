@@ -7,6 +7,7 @@ local utf8 = require "utf8"
 local zhuyin_map = require("unihan.zhuyin").map
 local CompletionItem = require "unihan.CompletionItem"
 local Glyph = require "unihan.Glyph"
+local Xiaoyun = require "unihan.Xiaoyun"
 
 --- 反切
 ---@class Fanqie
@@ -667,7 +668,15 @@ function UnihanDict:hover(ch)
     -- local lines = glyph:hover()
     local lines = Glyph.hover(glyph)
 
-    -- self.guangyun.hover_for_glyph(lines, glyph)
+    local list = self.sbgy:xiaoyun_from_glyph(glyph)
+    local i = 1
+    table.insert(lines, i, "# 小韻")
+    i = i + 1
+    for _, x in ipairs(list) do
+      table.insert(lines, i, Xiaoyun.__tostring(x))
+      i = i + 1
+    end
+    table.insert(lines, i, "")
 
     return lines
   end

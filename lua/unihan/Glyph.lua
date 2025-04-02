@@ -41,17 +41,7 @@ end
 ---@return string[]
 function Glyph:hover()
   local cp = utf8.codepoint(self.ch)
-  local lines = { "# " .. self.ch }
-  if self.ref then
-    table.insert(lines, "参照 => " .. util.join(self.ref, ","))
-  end
-  if self.goma then
-    table.insert(lines, ("UNICODE: U+%X, 四角号碼: %s"):format(cp, self.goma))
-  end
-  if self.annotation and #self.annotation > 0 then
-    table.insert(lines, "備考: " .. self.annotation)
-  end
-  table.insert(lines, "")
+  local lines = {}
 
   table.insert(lines, "# 読み")
   if #self.kana > 0 then
@@ -60,6 +50,18 @@ function Glyph:hover()
   end
   for _, r in ipairs(self.readings) do
     table.insert(lines, r.zhuyin .. (r.diao and ("%d"):format(r.diao) or ""))
+  end
+  table.insert(lines, "")
+
+  table.insert(lines, "# " .. self.ch)
+  if self.ref then
+    table.insert(lines, "参照 => " .. util.join(self.ref, ","))
+  end
+  if self.goma then
+    table.insert(lines, ("UNICODE: U+%X, 四角号碼: %s"):format(cp, self.goma))
+  end
+  if self.annotation and #self.annotation > 0 then
+    table.insert(lines, "備考: " .. self.annotation)
   end
   table.insert(lines, "")
 
