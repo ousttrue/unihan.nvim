@@ -3,16 +3,10 @@ local kana_util = require "unihan.kana_util"
 local pinyin = require "unihan.pinyin"
 local GuangYun = require "unihan.GuangYun"
 local Sbgy = require "unihan.Sbgy"
-local NUM_BASE = tonumber("2460", 16) - 1
 local utf8 = require "utf8"
 local zhuyin_map = require("unihan.zhuyin").map
 local CompletionItem = require "unihan.CompletionItem"
-
---- 読
----@class UnihanReading
----@field pinyin string pinyin
----@field zhuyin string? 注音符号
----@field diao integer? 四声
+local Glyph = require "unihan.Glyph"
 
 --- 反切
 ---@class Fanqie
@@ -35,20 +29,8 @@ local CompletionItem = require "unihan.CompletionItem"
 ---@field roma string? roma
 ---@field deng string? 声調
 
---- 単漢字
----@class UnihanChar
----@field annotation string?
----@field goma string? 四角号碼
----@field xszd XueShengSection[]? 學生字典
----@field readings UnihanReading[] 読み
----@field yin Yin[] 反切と声調
----@field kana string[] よみかな
----@field flag "joyo" | nil
----@field indices string? 康煕字典
----@field ref string[]? 異字体
-
 ---@class unihan.UnihanDict
----@field map table<string, UnihanChar> 単漢字辞書
+---@field map table<string, unihan.Glyph> 単漢字辞書
 ---@field jisyo table<string, CompletionItem[]> SKK辞書
 ---@field simple_map table<string, string> 簡体字マップ
 ---@field zhuyin_map table<string, string[]> 注音辞書
@@ -82,11 +64,14 @@ end
 function UnihanDict.resetmetatable(self)
   setmetatable(self, UnihanDict)
   GuangYun.resetmetatable(self.guangyun)
+  -- for k, v in pairs(self.map) do
+  --   setmetatable(v, Glyph)
+  -- end
 end
 
 ---単漢字登録
 ---@param char string 漢字
----@return UnihanChar
+---@return unihan.Glyph
 function UnihanDict:get_or_create(char)
   local i
   for _i in utf8.codes(char) do
@@ -94,27 +79,19 @@ function UnihanDict:get_or_create(char)
   end
   assert(i == 1, "multiple codepoint :" .. char)
 
-  ---@type UnihanChar?
-  local item = self.map[char]
-  if not item then
-    -- if utf8.len ~= 1 then
-    --   return
-    -- end
-    item = {
-      yin = {},
-      kana = {},
-      readings = {},
-    }
-    self.map[char] = item
+  local glyph = self.map[char]
+  if not glyph then
+    glyph = Glyph.new(char)
+    self.map[char] = glyph
   end
-  return item
+  return glyph
 end
 
 --- completion item の menu 文字列を作る
 ---@param ch string
----@param item UnihanChar
+---@param glyph unihan.Glyph
 ---@return string
-function UnihanDict:get_label(ch, item)
+function UnihanDict:get_label(ch, glyph)
   local label = ""
   local traditional = self.simple_map[ch]
   assert(traditional ~= ch)
@@ -124,16 +101,16 @@ function UnihanDict:get_label(ch, item)
     if ref and ref.goma then
       label = label .. ":" .. ref.goma
     end
-  elseif item.ref then
-    label = ">" .. util.join(item.ref)
-    local ref = self.map[item.ref]
+  elseif glyph.ref then
+    label = ">" .. util.join(glyph.ref)
+    local ref = self.map[glyph.ref]
     if ref and ref.goma then
       label = label .. ":" .. ref.goma
     end
-  elseif item.indices then
+  elseif glyph.indices then
     label = "[康煕]"
   end
-  if item.xszd then
+  if glyph.xszd then
     label = label .. "+"
   end
   return label
@@ -189,16 +166,16 @@ end
 ---@param path string?
 function UnihanDict:load_xszd(data, path)
   self.xszd_file = path
-  ---@type {item: UnihanChar?, i: integer}
+  ---@type {glyph: unihan.Glyph?, i: integer}
   local current = {
-    item = nil,
+    glyph = nil,
     i = 0,
   }
   ---@param yin Yin
   local function add_yin(yin)
-    local item = current.item
-    assert(item)
-    table.insert(item.yin, current.i, yin)
+    local glyph = current.glyph
+    assert(glyph)
+    table.insert(glyph.yin, current.i, yin)
     current.i = current.i + 1
   end
 
@@ -207,21 +184,21 @@ function UnihanDict:load_xszd(data, path)
     if header == "*" then
       -- skip
     elseif header == "**" then
-      current.item = nil
+      current.glyph = nil
       current.i = 1
 
       local n = code_count(body)
       if n == 1 then
-        local item = self:get_or_create(body)
-        item.xszd = {}
-        current.item = item
+        local glyph = self:get_or_create(body)
+        glyph.xszd = {}
+        current.glyph = glyph
       end
     elseif header == "***" then
       -- skip
     elseif header == "-" then
-      if current.item then
+      if current.glyph then
         -- TODO
-        table.insert(current.item.xszd, { header = body, body = "" })
+        table.insert(current.glyph.xszd, { header = body, body = "" })
 
         if body:match "^［解字］" then
         else
@@ -256,11 +233,11 @@ function UnihanDict:load_xszd(data, path)
         end
       end
     elseif header == "--" then
-      if current.item then
-        if #current.item.xszd == 0 then
-          table.insert(current.item.xszd, { header = body, body = "" })
+      if current.glyph then
+        if #current.glyph.xszd == 0 then
+          table.insert(current.glyph.xszd, { header = body, body = "" })
         else
-          current.item.xszd[#current.item.xszd].body = current.item.xszd[#current.item.xszd].body .. body
+          current.glyph.xszd[#current.glyph.xszd].body = current.glyph.xszd[#current.glyph.xszd].body .. body
         end
       end
     else
@@ -314,10 +291,10 @@ function UnihanDict:load_skk(data, path)
 
           if last_pos == 1 then
             -- 単漢字
-            local item = self.map[word]
-            if item then
-              item.annotation = annotation
-              table.insert(item.kana, kana)
+            local glyph = self.map[word]
+            if glyph then
+              glyph.annotation = annotation
+              table.insert(glyph.kana, kana)
             end
           else
             if word:match "^%w+$" then
@@ -370,9 +347,9 @@ function UnihanDict:load_kangxi(data)
   -- KX0075.001	一
   for kx, chs in string.gmatch(data, "(KX%d%d%d%d%.%d%d%d)\t([^%*%s]+)") do
     for _, ch in utf8.codes(chs) do
-      local item = self:get_or_create(ch)
-      assert(item)
-      item.indices = kx
+      local glyph = self:get_or_create(ch)
+      assert(glyph)
+      glyph.indices = kx
 
       -- 簡体字
       local t = self.simple_map[ch]
@@ -380,9 +357,9 @@ function UnihanDict:load_kangxi(data)
         -- print(t, ch)
         ch = t
       end
-      item = self:get_or_create(ch)
-      assert(item)
-      item.indices = kx
+      glyph = self:get_or_create(ch)
+      assert(glyph)
+      glyph.indices = kx
 
       -- use only first codepoint
       break
@@ -410,10 +387,10 @@ function UnihanDict:load_unihan_likedata(data, path)
   for unicode, k, v in string.gmatch(data, UnihanDict.UNIHAN_PATTERN) do
     local codepoint = tonumber(unicode, 16)
     local ch = utf8.char(codepoint)
-    local item = self:get_or_create(ch)
-    -- assert(item)
+    local glyph = self:get_or_create(ch)
+    -- assert(glyph)
     if k == "kFourCornerCode" then
-      item.goma = v
+      glyph.goma = v
     end
   end
 end
@@ -434,7 +411,7 @@ function UnihanDict:load_unihan_readings(data, path)
   for unicode, k, v in string.gmatch(data, UnihanDict.UNIHAN_PATTERN) do
     local codepoint = tonumber(unicode, 16)
     local ch = utf8.char(codepoint)
-    local item = self:get_or_create(ch)
+    local glyph = self:get_or_create(ch)
     if k == "kMandarin" then
       for _, r in util.split, { v, "%s+" } do
         local zhuyin, diao = pinyin:to_zhuyin(r)
@@ -448,7 +425,7 @@ function UnihanDict:load_unihan_readings(data, path)
         else
           -- print("no zhuyin", r)
         end
-        table.insert(item.readings, {
+        table.insert(glyph.readings, {
           pinyin = r,
           zhuyin = zhuyin,
           diao = diao,
@@ -456,12 +433,12 @@ function UnihanDict:load_unihan_readings(data, path)
       end
     elseif k == "kFanqie" then
       for s in util.split, { v, "%s" } do
-        table.insert(item.yin, {
+        table.insert(glyph.yin, {
           fanqie = s,
         })
       end
     elseif k == "kJapanese" then
-      item.kana = util.splited(v)
+      glyph.kana = util.splited(v)
     end
   end
 end
@@ -537,10 +514,10 @@ function UnihanDict:load_unihan_othermappings(data)
   for unicode, k, _ in string.gmatch(data, UnihanDict.UNIHAN_PATTERN) do
     local codepoint = tonumber(unicode, 16)
     local ch = utf8.char(codepoint)
-    local item = self:get_or_create(ch)
-    assert(item)
+    local glyph = self:get_or_create(ch)
+    assert(glyph)
     if k == "kJoyoKanji" then
-      item.flag = "joyo"
+      glyph.flag = "joyo"
     end
   end
 end
@@ -565,12 +542,12 @@ function UnihanDict:filter_jisyo(key)
 
   -- 単漢字
   key = kana_util.str_to_hirakana(key)
-  for k, item in pairs(self.map) do
-    if item.flag == "joyo" or item.xszd then
-      if item.indices or item.yin or item.xszd or item.annotation then
-        for _, kana in ipairs(item.kana) do
+  for k, glyph in pairs(self.map) do
+    if glyph.flag == "joyo" or glyph.xszd then
+      if glyph.indices or glyph.yin or glyph.xszd or glyph.annotation then
+        for _, kana in ipairs(glyph.kana) do
           if kana_util.str_to_hirakana(kana) == key then
-            local new_item = CompletionItem.from_word(k, item, self)
+            local new_item = CompletionItem.from_word(k, glyph, self)
 
             -- debug
             -- new_item.abbr = ("%d:").format(utf8.codepoint(new_item.word)) .. new_item.abbr
@@ -633,18 +610,18 @@ function UnihanDict:load_chinadat(data, path)
         self:add_ref(ch, cols[2])
       end
 
-      local item = self:get_or_create(ch)
-      assert(item)
+      local glyph = self:get_or_create(ch)
+      assert(glyph)
       if #cols[10] > 0 then
         local _kana = util.splited(cols[10], "1")
-        item.kana = {}
+        glyph.kana = {}
         for i = #_kana, 1, -1 do
           local kana = _kana[i]
           if #kana == 0 then
           elseif kana == "(" then
           elseif kana == ")" then
           else
-            table.insert(item.kana, 1, kana)
+            table.insert(glyph.kana, 1, kana)
           end
         end
       end
@@ -653,12 +630,12 @@ function UnihanDict:load_chinadat(data, path)
 end
 
 function UnihanDict:add_ref(ch, ref)
-  local item = self:get_or_create(ch)
-  assert(item)
-  local list = item.ref
+  local glyph = self:get_or_create(ch)
+  assert(glyph)
+  local list = glyph.ref
   if not list then
     list = {}
-    item.ref = list
+    glyph.ref = list
   end
   table.insert(list, ref)
 end
@@ -680,149 +657,18 @@ function UnihanDict:load_sbgy(data, path)
   self.sbgy:load_sbgy(data, path)
 end
 
----@param ch string
----@return unihan.Xiaoyun[]
-function UnihanDict:get_xiaoyun(ch)
-  local list = {}
-  local item = self.map[ch]
-  if item and item.yin then
-    for _, yin in ipairs(item.yin) do
-      local fanqie = yin.fanqie
-      if fanqie then
-        local xiao = self.guangyun:xiaoyun_from_fanqie(fanqie)
-        if xiao then
-          table.insert(list, xiao)
-        end
-      end
-    end
-  end
-  if #list > 0 then
-    return list
-  end
-
-  local xiao = self.guangyun:xiaoyun_from_char(ch)
-  if xiao then
-    return { xiao }
-  end
-
-  return {}
-end
+local NUM_BASE = tonumber("2460", 16) - 1
 
 ---@param ch string
 ---@return string[]?
 function UnihanDict:hover(ch)
-  local item = self.map[ch]
-  if item then
-    local cp = utf8.codepoint(ch)
-    local lines = { "# " .. ch }
-    if item.ref then
-      table.insert(lines, "参照 => " .. util.join(item.ref, ","))
-    end
-    if item.goma then
-      table.insert(lines, ("UNICODE: U+%X, 四角号碼: %s"):format(cp, item.goma))
-    end
-    if item.annotation and #item.annotation > 0 then
-      table.insert(lines, "備考: " .. item.annotation)
-    end
-    table.insert(lines, "")
+  local glyph = self.map[ch]
+  if glyph then
+    -- local lines = glyph:hover()
+    local lines = Glyph.hover(glyph)
 
-    table.insert(lines, "# 読み")
-    if #item.kana > 0 then
-      -- table.insert(lines, util.join(item.kana, ","))
-      table.insert(lines, item.kana[1])
-    end
-    for _, r in ipairs(item.readings) do
-      table.insert(lines, r.zhuyin .. (r.diao and ("%d"):format(r.diao) or ""))
-    end
-    table.insert(lines, "")
+    -- self.guangyun.hover_for_glyph(lines, glyph)
 
-    local xiaoyuns = self:get_xiaoyun(ch)
-    local xiaoyun_hover
-    local xiaoyun
-    if #xiaoyuns > 0 then
-      xiaoyun_hover, xiaoyun = self.guangyun:hover(xiaoyuns)
-    end
-
-    if xiaoyun_hover and xiaoyun then
-      table.insert(
-        lines,
-        ("# 廣韻 %s, 小韻 %s, %s切%s声 %s口%s等 %s"):format(
-          xiaoyun.name,
-          xiaoyun.chars[1],
-          xiaoyun.fanqie,
-          xiaoyun[""],
-          xiaoyun[""],
-          xiaoyun[""],
-          xiaoyun.roma
-        )
-      )
-      table.insert(lines, "")
-
-      util.insert_all(lines, xiaoyun_hover)
-
-      local function make_x(i)
-        local x = xiaoyun.chars[i]
-        if x then
-          local n = utf8.char(NUM_BASE + i) .. " "
-          local y = self.map[x]
-          if y and #y.readings > 0 then
-            local r = y.readings[1]
-            return ("%s%s %s%s %s"):format(n, x, r.zhuyin, r.diao or "", y.kana[1])
-          else
-            return n .. x
-          end
-        end
-      end
-
-      -- 字例
-      table.insert(lines, ("## %d字"):format(#xiaoyun.chars))
-      for i = 1, #xiaoyun.chars, 4 do
-        local x1 = make_x(i)
-        local x2 = make_x(i + 1)
-        local x3 = make_x(i + 2)
-        local x4 = make_x(i + 3)
-        if x1 and x2 and x3 and x4 then
-          table.insert(lines, "|" .. x1 .. "|" .. x2 .. "|" .. x3 .. "|" .. x4)
-        elseif x1 and x2 and x3 then
-          table.insert(lines, "|" .. x1 .. "|" .. x2 .. "|" .. x3)
-        elseif x1 and x2 then
-          table.insert(lines, "|" .. x1 .. "|" .. x2)
-        elseif x1 then
-          table.insert(lines, "|" .. x1)
-        end
-      end
-      table.insert(lines, "")
-    else
-      if #xiaoyuns > 0 then
-        for _, x in ipairs(xiaoyuns) do
-          table.insert(lines, "小韻: " .. x.name .. ", 聲紐:" .. x["聲紐"])
-        end
-      else
-        table.insert(lines, ("xiaoyun for %s not found"):format(ch))
-      end
-      local line = ""
-      for _, yin in ipairs(item.yin) do
-        local f = yin.fanqie
-        if #line > 0 then
-          line = line .. ","
-        end
-        if f then
-          line = line .. f .. "切"
-        end
-      end
-      table.insert(lines, line)
-      table.insert(lines, "")
-    end
-
-    if item.xszd then
-      table.insert(lines, "# 學生字典")
-      for _, x in ipairs(item.xszd) do
-        table.insert(lines, "## " .. x.header)
-        for _, l in util.split, { x.body, "\n" } do
-          table.insert(lines, l)
-        end
-      end
-    end
     return lines
   end
 end
@@ -868,11 +714,11 @@ function UnihanDict:_get_cmp_entries_goma(key, range)
   ---@type lsp.CompletionItem[]
   local items = {}
 
-  for ch, item in pairs(self.map) do
-    if item.goma and item.goma:match(key) then
+  for ch, glyph in pairs(self.map) do
+    if glyph.goma and glyph.goma:match(key) then
       local lsp_item = {
-        label = ch .. " " .. item.goma,
-        -- documentation = item.info,
+        label = ch .. " " .. glyph.goma,
+        -- documentation = glyph.info,
         filterText = "▽" .. key,
         textEdit = {
           newText = ch,

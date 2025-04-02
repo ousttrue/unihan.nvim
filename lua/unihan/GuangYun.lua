@@ -259,7 +259,7 @@ function GuangYun:make_xiaoyun_list(xiaoyun)
   for i, sheng in ipairs(self.sheng_list) do
     local founds = self:find_xiaoyun(function(x)
       return x.name == xiaoyun.name --[[and x.deng == deng]]
-        and sheng:match(x.shengniu)
+          and sheng:match(x.shengniu)
     end)
     if #founds > 0 then
       if #founds == 1 then
@@ -413,6 +413,113 @@ function GuangYun:_hover(xiaoyun)
     return lines
   else
     print()
+  end
+end
+
+---@param glyph unihan.Glyph
+---@return unihan.Xiaoyun[]
+function GuangYun:xiaoyun_from_glhpy(glyph)
+  local list = {}
+  if glyph and glyph.yin then
+    for _, yin in ipairs(glyph.yin) do
+      local fanqie = yin.fanqie
+      if fanqie then
+        local xiao = self:xiaoyun_from_fanqie(fanqie)
+        if xiao then
+          table.insert(list, xiao)
+        end
+      end
+    end
+  end
+  if #list > 0 then
+    return list
+  end
+
+  local xiao = self:xiaoyun_from_char(glyph.ch)
+  if xiao then
+    return { xiao }
+  end
+
+  return {}
+end
+
+function GuangYun:hover_for_glyph(lines, glyph)
+  local xiaoyuns = self.guangyun:xiaoyun_from_glhpy(glyph)
+  local xiaoyun_hover
+  local xiaoyun
+  if #xiaoyuns > 0 then
+    xiaoyun_hover, xiaoyun = self.guangyun:hover(xiaoyuns)
+  end
+
+  if xiaoyun_hover and xiaoyun then
+    table.insert(
+      lines,
+      ("# 廣韻 %s, 小韻 %s, %s切%s声 %s口%s等 %s"):format(
+        xiaoyun.name,
+        xiaoyun.chars[1],
+        xiaoyun.fanqie,
+        xiaoyun[""],
+        xiaoyun["開合"],
+        xiaoyun["等"],
+        xiaoyun.roma
+      )
+    )
+    table.insert(lines, "")
+
+    util.insert_all(lines, xiaoyun_hover)
+
+    local function make_x(i)
+      local x = xiaoyun.chars[i]
+      if x then
+        local n = utf8.char(NUM_BASE + i) .. " "
+        local y = self.map[x]
+        if y and #y.readings > 0 then
+          local r = y.readings[1]
+          return ("%s%s %s%s %s"):format(n, x, r.zhuyin, r.diao or "", y.kana[1])
+        else
+          return n .. x
+        end
+      end
+    end
+
+    -- 字例
+    table.insert(lines, ("## %d字"):format(#xiaoyun.chars))
+    for i = 1, #xiaoyun.chars, 4 do
+      local x1 = make_x(i)
+      local x2 = make_x(i + 1)
+      local x3 = make_x(i + 2)
+      local x4 = make_x(i + 3)
+      if x1 and x2 and x3 and x4 then
+        table.insert(lines, "|" .. x1 .. "|" .. x2 .. "|" .. x3 .. "|" .. x4)
+      elseif x1 and x2 and x3 then
+        table.insert(lines, "|" .. x1 .. "|" .. x2 .. "|" .. x3)
+      elseif x1 and x2 then
+        table.insert(lines, "|" .. x1 .. "|" .. x2)
+      elseif x1 then
+        table.insert(lines, "|" .. x1)
+      end
+    end
+    table.insert(lines, "")
+  else
+    -- if #xiaoyuns > 0 then
+    --   for _, x in ipairs(xiaoyuns) do
+    --     table.insert(lines, "小韻: " .. x.name .. ", 聲紐:" .. x["聲紐"])
+    --   end
+    -- else
+    --   table.insert(lines, ("xiaoyun for %s not found"):format(ch))
+    -- end
+    -- local line = ""
+    -- for _, yin in ipairs(self.yin) do
+    --   local f = yin.fanqie
+    --   if #line > 0 then
+    --     line = line .. ","
+    --   end
+    --   if f then
+    --     line = line .. f .. "切"
+    --   end
+    -- end
+    -- table.insert(lines, line)
+    -- table.insert(lines, "")
   end
 end
 
