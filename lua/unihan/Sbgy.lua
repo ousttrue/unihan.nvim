@@ -510,27 +510,47 @@ function Sbgy:render_lines(u)
   ---@type string[]
   local lines = {}
 
-  local space = "                 "
+  local space = "                   "
 
   for i = 1, 60 do
     local yun = self["平"][i]
-    lines[i] = ("|%02d|"):format(i) .. (yun and yun:md_link() or space)
+    local str = ("|%02d|"):format(i)
+    if yun then
+      str = ("%s%s%02d"):format(str, yun:md_link(), #yun.xiaoyun)
+    end
+    lines[i] = str
   end
   for i = 1, 60 do
     local yun = self["上"][i]
-    lines[i] = lines[i] .. "|" .. (yun and yun:md_link() or space)
+    local str = lines[i]
+    if yun then
+      str = ("%s|%s%02d"):format(str, yun:md_link(), #yun.xiaoyun)
+    end
+    lines[i] = str
   end
   for i = 1, 60 do
     local yun = self["去"][i]
-    lines[i] = lines[i] .. "|" .. (yun and yun:md_link() or space)
+    local str = lines[i]
+    if yun then
+      str = ("%s|%s%02d"):format(str, yun:md_link(), #yun.xiaoyun)
+    end
+    lines[i] = str
   end
   for i = 1, 60 do
     local yun = self["入"][i]
-    lines[i] = lines[i] .. "|" .. (yun and yun:md_link() or space) .. "|"
+    local str = lines[i]
+    if yun then
+      str = ("%s|%s%02d|"):format(str, yun:md_link(), #yun.xiaoyun)
+    end
+    lines[i] = str
   end
 
-  table.insert(lines, 1, "|  |[平聲](sbgy:/平) |[上聲](sbgy:/上) |[去聲](sbgy:/去) |[入聲](sbgy:/入) |")
-  table.insert(lines, 2, "|--|-----------------|-----------------|-----------------|-----------------|")
+  table.insert(
+    lines,
+    1,
+    "|  |[平聲](sbgy:/平)   |[上聲](sbgy:/上)   |[去聲](sbgy:/去)   |[入聲](sbgy:/入)   |"
+  )
+  table.insert(lines, 2, "|--|-------------------|-------------------|-------------------|-------------------|")
 
   local sbgy_file = self.sbgy_file
   if sbgy_file then
