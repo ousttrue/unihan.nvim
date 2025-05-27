@@ -949,6 +949,12 @@ function UnihanDict:lsp_completion(params)
     local items = self:get_cmp_entries(after_marker_before_cursor, range)
     -- print(vim.inspect(params), ("[%s]"):format(cursor_before_line), vim.inspect(items))
     if #items > 0 then
+      local debug_item = {
+        label = line .. "[debug]",
+        documentation = line .. "\n" .. after_marker_before_cursor .. "\n" .. vim.inspect(params),
+      }
+      table.insert(items, 1, debug_item)
+
       return nil, items
     end
   elseif first_zh then
@@ -1004,6 +1010,7 @@ function UnihanDict:lsp_completion(params)
 
     -- print(vim.inspect(params), ("[%s]"):format(cursor_before_line), vim.inspect(items))
     if #items > 0 then
+      -- debug info
       return nil, items
     end
   end
