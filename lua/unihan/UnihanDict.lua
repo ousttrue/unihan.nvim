@@ -821,9 +821,12 @@ function UnihanDict:_get_cmp_entries_kana(_key, range)
   ---@type lsp.CompletionItem[]
   local items = {}
   for _, word in ipairs(words) do
+    -- https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#completionItem
     ---@type lsp.CompletionItem
     local lsp_item = {
       label = word.abbr,
+      kind = 1, -- Text
+      detail = "detail",
       documentation = word.info,
     }
 
