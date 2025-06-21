@@ -7,7 +7,7 @@ local utf8 = require "utf8"
 local zhuyin_map = require("unihan.zhuyin").map
 local CompletionItem = require "unihan.CompletionItem"
 local Glyph = require "unihan.Glyph"
-local Xiaoyun = require "unihan.Xiaoyun"
+local Xiaoyun = require "unihan.XiaoYun"
 
 --- 反切
 ---@class Fanqie

@@ -4,7 +4,7 @@
 -- https://ytenx.org/kyonh/
 local util = require "unihan.util"
 local yun = require "unihan.yun"
-local Xiaoyun = require "unihan.Xiaoyun"
+local Xiaoyun = require "unihan.XiaoYun"
 local utf8 = require "utf8"
 
 ---@alias ShengNiuType "重唇音"|"軽唇音"|"舌頭音"|"舌上音"|"牙音"|"歯頭音"|"正歯音莊組"|"正歯音章組"|"喉音"|"半舌音"|"半歯音"
